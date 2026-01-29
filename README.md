@@ -87,13 +87,23 @@ curl -X POST "http://localhost:8000/ocr/pdf" \
 
 This project includes critical patches to make DeepSeek-OCR2 work reliably with modern vLLM and FastAPI. These are automatically applied during the Docker build.
 
-#### 1. Resolution Patch (`custom_image_process_ocr2.py`)
-DeepSeek-OCR2 requires a specific image resolution (768px square) for its vision encoder. The original library code often defaults to values that cause mismatch errors. Our patch:
-- Forces image resolution to **768px**.
-- Fixes a signature mismatch in `tokenize_with_images()` for custom prompts.
+### 1. Model Architecture & Registration
+*   **DeepSeek-OCR2 Integration**: Migrated the backend from the v1 architecture to the new `DeepseekOCR2ForCausalLM` architecture.
+*   **vLLM Model Registry**: Manually registered the `DeepSeek-OCR2` class in start_server.py using `ModelRegistry.register_model`, ensuring the vLLM engine recognizes the new model's visual causal flow.
 
-#### 2. Model Registration
-Since DeepSeek-OCR2 is a custom architecture, it is registered automatically in `start_server.py` using `ModelRegistry.register_model`.
+### 2. Resolution & Vision Patch (Critical)
+*   **768px Force**: DeepSeek-OCR2 is optimized for exactly **768x768** image inputs. The original code often defaulted to 640px, causing "UnboundLocalError" or vision token mismatches. We updated custom_config.py and the processor to strictly enforce 768px.
+*   **Processor Patch**: Created custom_image_process_ocr2.py to fix a bug in the vendor's library where `tokenize_with_images()` did not accept a custom `prompt` argument. This patch is automatically injected into the container during the build.
+
+### 3. Docker Optimization
+*   **Weights Embedding**: Transitioned from using Docker volumes to **embedding the model weights** directly into the image (`COPY models/ /app/models/`). This makes the image fully portable and "plug-and-play."
+*   **Size Reduction**: Optimized the image size by fixing .dockerignore and providing instructions to strip the **6.3GB .git folder** from the model weights before building.
+*   **Architecture Locking**: Configured the build to target `linux/amd64`, ensuring compatibility with NVIDIA GPU servers
+
+### 4. Code & Configuration Fixes
+*   **Path Correction**: Fixed a bug where `MODEL_PATH` was defaulting to a Hugging Face repo ID (causing 401 errors); it now defaults to the absolute internal path `/app/models/deepseek-ai/DeepSeek-OCR2`.
+*   **FastAPI Endpoints**: Updated start_server.py to handle OCR2-specific processor initialization, allowing for dynamic prompt passing (e.g., swapping between "Markdown conversion" and "Plain OCR") via the API.
+
 
 ### Environment Variables
 
