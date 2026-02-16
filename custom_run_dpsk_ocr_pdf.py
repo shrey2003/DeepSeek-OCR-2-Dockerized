@@ -255,6 +255,8 @@ def process_single_image(image, prompt):
 
 
 def main():
+    global INPUT_PATH, OUTPUT_PATH
+    
     parser = argparse.ArgumentParser(description='Process PDF with DeepSeek OCR using custom prompt')
     parser.add_argument('--prompt', type=str, help='Custom prompt to use for OCR (overrides default from config)')
     parser.add_argument('--input', type=str, default=INPUT_PATH, help='Input PDF file path')
@@ -269,10 +271,8 @@ def main():
     
     # Set paths from arguments if provided
     if args.input:
-        global INPUT_PATH
         INPUT_PATH = args.input
     if args.output:
-        global OUTPUT_PATH
         OUTPUT_PATH = args.output
 
     os.makedirs(OUTPUT_PATH, exist_ok=True)
