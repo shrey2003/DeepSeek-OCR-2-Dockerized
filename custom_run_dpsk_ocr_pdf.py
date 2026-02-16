@@ -70,14 +70,15 @@ def pdf_to_images_high_quality(pdf_path, dpi=144, image_format="PNG"):
     This function converts each PDF page to a PIL Image that can be processed by the vision model.
     
     Args:
-        pdf_path: Path to the PDF file to convert
-        dpi: Resolution in dots per inch (144 DPI provides good quality)
-        image_format: Output format ("PNG" or other)
+        pdf_path (str): Path to the PDF file to convert
+        dpi (int): Resolution in dots per inch (144 DPI provides good quality)
+        image_format (str): Output format ("PNG" or other)
     
     Returns:
-        List of PIL Image objects, one per PDF page
+        list[PIL.Image.Image]: List of PIL Image objects, one per PDF page
     
-    Process:
+    Note:
+        The conversion process:
         1. Opens PDF with PyMuPDF (fitz)
         2. Renders each page as a raster image at specified DPI
         3. Converts the rendered pixmap to PIL Image format

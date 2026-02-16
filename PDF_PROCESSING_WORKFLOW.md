@@ -154,7 +154,7 @@ Features include:
 
 ### Processing Time
 | Step | Typical Time |
-|------|-------------|
+|------|--------------|
 | PDF → Image (1 page) | ~100-200ms |
 | OCR Processing (1 page) | ~2-5 seconds |
 | Post-processing | ~50-100ms |
