@@ -41,6 +41,24 @@ The model weights are baked into the image for portability.
 docker buildx build --platform linux/amd64 -t shrey2003/deepseek-ocr2-dockerized:latest --load .
 ```
 
+#### Build for ARM64/aarch64 (Apple Silicon, ARM Servers)
+
+```bash
+# Use the dedicated ARM64 build script
+chmod +x build-arm64.sh
+./build-arm64.sh
+```
+
+#### Build for Both AMD64 and ARM64 (Multi-Architecture)
+
+```bash
+# Use the multi-architecture build script
+chmod +x build-multi-arch.sh
+./build-multi-arch.sh
+```
+
+**📖 For detailed multi-architecture build instructions, see [MULTI_ARCH_BUILD.md](./MULTI_ARCH_BUILD.md)**
+
 #### Start the service
 
 ```bash
@@ -130,11 +148,15 @@ Edit `docker-compose.yml` to adjust these settings:
 .
 ├── README.md                              # This file
 ├── PDF_PROCESSING_WORKFLOW.md             # Detailed PDF → Image conversion explanation
+├── MULTI_ARCH_BUILD.md                    # Multi-architecture build guide (AMD64 & ARM64)
+├── build-multi-arch.sh                    # Script to build for both AMD64 and ARM64
+├── build-arm64.sh                         # Script to build for ARM64/aarch64 only
+├── build.bat                              # Windows build script
 ├── custom_config.py                       # Patched config (768px resolution)
 ├── custom_image_process_ocr2.py           # Patched vision processor
 ├── custom_run_dpsk_ocr_pdf.py             # PDF processing script (with image conversion)
 ├── start_server.py                        # FastAPI / vLLM Server
-├── Dockerfile                             # AMD64 optimized Dockerfile
+├── Dockerfile                             # Multi-platform compatible Dockerfile
 ├── docker-compose.yml                     # Deployment config
 ├── pdf_to_markdown_processor_enhanced.py  # Enhanced local processing script
 └── models/                                # Directory for model weights
