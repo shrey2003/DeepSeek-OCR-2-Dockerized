@@ -64,27 +64,51 @@ class Colors:
 
 def pdf_to_images_high_quality(pdf_path, dpi=144, image_format="PNG"):
     """
-    pdf2images
+    Convert PDF pages to high-quality images.
+    
+    IMPORTANT: DeepSeek OCR2 model does NOT accept PDF directly - it requires image input.
+    This function converts each PDF page to a PIL Image that can be processed by the vision model.
+    
+    Args:
+        pdf_path (str): Path to the PDF file to convert
+        dpi (int): Resolution in dots per inch (144 DPI provides good quality)
+        image_format (str): Output format ("PNG" or other)
+    
+    Returns:
+        list[PIL.Image.Image]: List of PIL Image objects, one per PDF page
+    
+    Note:
+        The conversion process:
+        1. Opens PDF with PyMuPDF (fitz)
+        2. Renders each page as a raster image at specified DPI
+        3. Converts the rendered pixmap to PIL Image format
+        4. Returns list of images for OCR processing
     """
     images = []
     
+    # Open the PDF document using PyMuPDF
     pdf_document = fitz.open(pdf_path)
     
+    # Calculate zoom factor for desired DPI (72 is base DPI)
     zoom = dpi / 72.0
     matrix = fitz.Matrix(zoom, zoom)
     
+    # Process each page of the PDF
     for page_num in range(pdf_document.page_count):
         page = pdf_document[page_num]
 
+        # Render the page to a pixmap (raster image) at the specified resolution
         pixmap = page.get_pixmap(matrix=matrix, alpha=False)
         Image.MAX_IMAGE_PIXELS = None
 
+        # Convert pixmap to PIL Image
         if image_format.upper() == "PNG":
             img_data = pixmap.tobytes("png")
             img = Image.open(io.BytesIO(img_data))
         else:
             img_data = pixmap.tobytes("png")
             img = Image.open(io.BytesIO(img_data))
+            # Convert RGBA to RGB if necessary
             if img.mode in ('RGBA', 'LA'):
                 background = Image.new('RGB', img.size, (255, 255, 255))
                 background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
@@ -232,6 +256,8 @@ def process_single_image(image, prompt):
 
 
 def main():
+    global INPUT_PATH, OUTPUT_PATH
+    
     parser = argparse.ArgumentParser(description='Process PDF with DeepSeek OCR using custom prompt')
     parser.add_argument('--prompt', type=str, help='Custom prompt to use for OCR (overrides default from config)')
     parser.add_argument('--input', type=str, default=INPUT_PATH, help='Input PDF file path')
@@ -246,26 +272,29 @@ def main():
     
     # Set paths from arguments if provided
     if args.input:
-        global INPUT_PATH
         INPUT_PATH = args.input
     if args.output:
-        global OUTPUT_PATH
         OUTPUT_PATH = args.output
 
     os.makedirs(OUTPUT_PATH, exist_ok=True)
     os.makedirs(f'{OUTPUT_PATH}/images', exist_ok=True)
     
-    print(f'{Colors.RED}PDF loading .....{Colors.RESET}')
+    print(f'{Colors.RED}PDF loading and converting to images.....{Colors.RESET}')
+    print(f'{Colors.YELLOW}NOTE: DeepSeek OCR2 requires image input - converting PDF pages to images first{Colors.RESET}')
 
+    # CRITICAL: Convert PDF to images before OCR processing
+    # DeepSeek OCR2 is a vision model that only accepts image input, not PDF directly
     images = pdf_to_images_high_quality(INPUT_PATH)
 
     # batch_inputs = []
 
+    # Process converted images: Each image is tokenized and prepared for the OCR model
+    # This step converts PIL Images into the tensor format required by DeepSeek OCR2
     with ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:  
         batch_inputs = list(tqdm(
             executor.map(lambda img: process_single_image(img, prompt), images),
             total=len(images),
-            desc="Pre-processed images"
+            desc="Preparing images for OCR model"
         ))
 
 
@@ -281,6 +310,8 @@ def main():
     #     batch_inputs.extend(cache_list)
 
 
+    # Feed the processed images to the DeepSeek OCR2 model via vLLM
+    # The model processes each page image and generates text/markdown output
     outputs_list = llm.generate(
         batch_inputs,
         sampling_params=sampling_params

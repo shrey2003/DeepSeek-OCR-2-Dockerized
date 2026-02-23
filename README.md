@@ -2,6 +2,17 @@
 
 A powerful OCR solution that converts PDF documents to Markdown format using **DeepSeek-OCR2** with a FastAPI backend. This project provides a production-ready Dockerized environment for high-performance OCR using vLLM.
 
+## ⚠️ Important: How PDF Processing Works
+
+**The DeepSeek OCR2 model does NOT accept PDF files directly.** PDFs are automatically converted to images (one per page) before being processed by the vision model. For a detailed technical explanation of this workflow, see [PDF_PROCESSING_WORKFLOW.md](./PDF_PROCESSING_WORKFLOW.md).
+
+**Quick Summary:**
+- PDF pages are rendered as images using PyMuPDF at 144 DPI
+- Each page image is then processed by the DeepSeek OCR2 vision model
+- This is a requirement of how vision-language models work - they need pixel data, not document structure
+
+---
+
 ## 🚀 Quick Start
 
 ### 1. Download Model Weights
@@ -29,6 +40,29 @@ The model weights are baked into the image for portability.
 ```bash
 docker buildx build --platform linux/amd64 -t shrey2003/deepseek-ocr2-dockerized:latest --load .
 ```
+
+#### Build for ARM64/aarch64 (Apple Silicon, ARM Servers)
+
+```bash
+# Use the dedicated ARM64 build script
+chmod +x build-arm64.sh
+./build-arm64.sh
+```
+
+**⚠️ Common ARM64 Build Issues:**
+- If you see "start_server.py: not found", make sure you have the latest code
+- If build context is large (>10GB), ensure models/.git folder is removed
+- See [ARM64_TROUBLESHOOTING.md](./ARM64_TROUBLESHOOTING.md) for detailed solutions
+
+#### Build for Both AMD64 and ARM64 (Multi-Architecture)
+
+```bash
+# Use the multi-architecture build script
+chmod +x build-multi-arch.sh
+./build-multi-arch.sh
+```
+
+**📖 For detailed multi-architecture build instructions, see [MULTI_ARCH_BUILD.md](./MULTI_ARCH_BUILD.md)**
 
 #### Start the service
 
@@ -118,14 +152,34 @@ Edit `docker-compose.yml` to adjust these settings:
 ```
 .
 ├── README.md                              # This file
+├── PDF_PROCESSING_WORKFLOW.md             # Detailed PDF → Image conversion explanation
+├── MULTI_ARCH_BUILD.md                    # Multi-architecture build guide (AMD64 & ARM64)
+├── build-multi-arch.sh                    # Script to build for both AMD64 and ARM64
+├── build-arm64.sh                         # Script to build for ARM64/aarch64 only
+├── build.bat                              # Windows build script
 ├── custom_config.py                       # Patched config (768px resolution)
 ├── custom_image_process_ocr2.py           # Patched vision processor
+├── custom_run_dpsk_ocr_pdf.py             # PDF processing script (with image conversion)
 ├── start_server.py                        # FastAPI / vLLM Server
-├── Dockerfile                             # AMD64 optimized Dockerfile
+├── Dockerfile                             # Multi-platform compatible Dockerfile
 ├── docker-compose.yml                     # Deployment config
 ├── pdf_to_markdown_processor_enhanced.py  # Enhanced local processing script
 └── models/                                # Directory for model weights
 ```
+
+---
+
+## 📖 Technical Documentation
+
+### PDF Processing Details
+For a comprehensive understanding of how PDFs are converted to images before OCR processing, see:
+- **[PDF_PROCESSING_WORKFLOW.md](./PDF_PROCESSING_WORKFLOW.md)** - Complete technical explanation
+
+**Key Points:**
+- PDFs are rendered as images using PyMuPDF (fitz) at 144 DPI
+- Each page becomes a separate PIL Image object
+- Images are resized to 768x768 pixels for the model
+- The DeepSeek OCR2 model is a vision transformer that requires pixel input
 
 ---
 
@@ -145,6 +199,7 @@ This project follows the same license as the DeepSeek-OCR2 project. Please refer
 
 ## 🔄 Usage Workflow
 
+### High-Level Flow
 ```mermaid
 graph TD
     A[Start] --> B{Choose Method}
@@ -161,3 +216,21 @@ graph TD
     G --> I[Done]
     H --> I
 ```
+
+### PDF Processing Flow (Internal)
+```mermaid
+graph LR
+    A[PDF File] -->|PyMuPDF| B[Page 1 Image]
+    A -->|PyMuPDF| C[Page 2 Image]
+    A -->|PyMuPDF| D[Page N Image]
+    
+    B -->|DeepSeek OCR2| E[Text/Markdown]
+    C -->|DeepSeek OCR2| F[Text/Markdown]
+    D -->|DeepSeek OCR2| G[Text/Markdown]
+    
+    E --> H[Combined Output]
+    F --> H
+    G --> H
+```
+
+**Note:** The PDF → Image conversion happens automatically. DeepSeek OCR2 cannot process PDF directly.
