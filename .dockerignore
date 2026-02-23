@@ -1,0 +1,85 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.Spotlight-V100
+.Trashes
+
+# Documentation (exclude from Docker build to save space)
+*.md
+!README.md
+!DOCKER_README.md
+
+# Data and outputs
+data/
+outputs/
+*.log
+*.pdf
+*.jpg
+*.jpeg
+*.png
+!test_*.png
+
+# Model git files (huge, not needed in container)
+models/**/.git
+models/**/.gitattributes
+
+# Test files (not needed in production container)
+test_*.py
+*_test.py
+tests/
+
+# Build scripts (not needed inside container)
+build*.sh
+build.bat
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Docker
+docker-compose*.yml
+!docker-compose.yml

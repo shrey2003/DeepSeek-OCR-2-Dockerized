@@ -49,6 +49,11 @@ chmod +x build-arm64.sh
 ./build-arm64.sh
 ```
 
+**⚠️ Common ARM64 Build Issues:**
+- If you see "start_server.py: not found", make sure you have the latest code
+- If build context is large (>10GB), ensure models/.git folder is removed
+- See [ARM64_TROUBLESHOOTING.md](./ARM64_TROUBLESHOOTING.md) for detailed solutions
+
 #### Build for Both AMD64 and ARM64 (Multi-Architecture)
 
 ```bash
